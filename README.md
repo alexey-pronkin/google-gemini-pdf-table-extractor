@@ -41,7 +41,8 @@ cd gemini-pdf-table-extractor
 
 2. Install the required dependencies:
 ```bash
-pip install -r requirements.txt
+uv venv
+sourили ce .venv/bin/activate
 ```
 
 3. Set up your Google API key:

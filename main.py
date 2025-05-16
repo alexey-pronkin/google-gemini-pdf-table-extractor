@@ -128,22 +128,32 @@ def process_pdf_with_gemini(pdf_path, output_path=None, prompt=None, enable_thin
     ]
     
     # Configure generation parameters optimized for table extraction
-    generate_content_config = types.GenerateContentConfig(
-        temperature=0,       # Use 0 temperature for most deterministic output
-        top_p=0.1,           # Lower top_p for more focused and precise results
-        top_k=5,             # Lower top_k to limit token selection to the most likely options
-        max_output_tokens=20000,  # Ensure enough tokens for complete HTML output
-    )
+    model = "gemini-2.5-flash-preview-04-17" # "gemini-2.5-pro-preview-05-06"
+    model_max_tokens = 1_000_000
+    
     
     # Add explicit thinking configuration if enabled
     # This allocates tokens for the model's internal reasoning process
+    
     if enable_thinking:
+        generate_content_config = types.GenerateContentConfig(
+            temperature=0,       # Use 0 temperature for most deterministic output
+            top_p=0.1,           # Lower top_p for more focused and precise results
+            top_k=5,             # Lower top_k to limit token selection to the most likely options
+            max_output_tokens=model_max_tokens-thinking_budget,  # Ensure enough tokens for complete HTML output
+        )
         generate_content_config.thinking_config = types.ThinkingConfig(
             thinking_budget=thinking_budget,
         )
-    
+    else:
+        generate_content_config = types.GenerateContentConfig(
+            temperature=0,       # Use 0 temperature for most deterministic output
+            top_p=0.1,           # Lower top_p for more focused and precise results
+            top_k=5,             # Lower top_k to limit token selection to the most likely options
+            max_output_tokens=model_max_tokens,  # Ensure enough tokens for complete HTML output
+        )
     # Generate content with the file and prompt using Gemini 2.5 Flash
-    model = "gemini-2.5-flash-preview-04-17"
+    
     response = client.models.generate_content(
         model=model,
         contents=contents,
@@ -180,7 +190,7 @@ def main():
                       help="Tokens allocated for model's reasoning (higher values for complex tables)", 
                       type=int, 
                       default=24000)
-    parser.add_argument("--stream", help="Stream the response", action="store_true", default=False)
+    parser.add_argument("--stream", help="Stream the response", action="store_true", default=True)
     args = parser.parse_args()
     
     # If no output path specified, create one based on input filename
